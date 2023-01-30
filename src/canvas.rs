@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::{borrow::Borrow, cell::RefCell};
 
-use fltk::draw::{draw_line, set_line_style, LineStyle};
+use fltk::draw::{draw_line, draw_rect, set_line_style, LineStyle};
 use fltk::prelude::SurfaceDevice;
 use fltk::surface::ImageSurface;
 use fltk::{app, button, draw, group};
@@ -13,6 +13,7 @@ use fltk::{
 };
 
 use crate::figures::point::Point;
+use crate::figures::{circle, rectangle};
 
 #[derive(Clone)]
 pub struct Canvas {
@@ -22,6 +23,7 @@ pub struct Canvas {
     l: Rc<RefCell<bool>>, // lines
     c: Rc<RefCell<bool>>, // circle
     points: Rc<RefCell<Vec<Point>>>,
+    buffer: Rc<RefCell<Vec<Point>>>,
 }
 
 macro_rules! rcrc {
@@ -47,11 +49,13 @@ impl Canvas {
         let r = false;
         let l = true;
         let points: Vec<Point> = Vec::new();
+        let buffer: Vec<Point> = Vec::new();
 
         let c = rcrc!(c);
         let r = rcrc!(r);
         let l = rcrc!(l);
         let points = rcrc!(points);
+        let buffer = rcrc!(buffer);
 
         // handlers
         frame.draw({
@@ -66,14 +70,20 @@ impl Canvas {
         frame.handle({
             let surf = surf.clone();
             let l_clone = l.clone();
+            let c_clone = c.clone();
+            let r_clone = r.clone();
             let points = points.clone();
+            let buffer = buffer.clone();
             move |f, ev| {
                 // println!("{}", ev);
                 // println!("coords {:?}", app::event_coords());
                 // println!("get mouse {:?}", app::get_mouse());
                 let surf = surf.borrow_mut();
-                let l_lmao = l_clone.borrow_mut();
+                let l_bm = l_clone.borrow_mut();
+                let c_bm = c_clone.borrow_mut();
+                let r_bm = r_clone.borrow_mut();
                 let mut points = points.borrow_mut();
+                let mut buffer = buffer.borrow_mut();
 
                 match ev {
                     Event::Push => {
@@ -82,11 +92,13 @@ impl Canvas {
                         draw_circle_fill(coords.0, coords.1, 5, Color::Black);
 
                         &points.push(Point::new(coords.0 as f64, coords.1 as f64));
-                        let len = points.len();
+                        &buffer.push(Point::new(coords.0 as f64, coords.1 as f64));
+                        let len = buffer.len();
 
-                        if len > 1 && l_lmao.eq(&true) {
-                            let first = &points[len - 1];
-                            let second = &points[len - 2];
+                        // line
+                        if len > 1 && l_bm.eq(&true) {
+                            let first = &buffer[len - 1];
+                            let second = &buffer[len - 2];
                             set_draw_color(Color::Black);
                             set_line_style(LineStyle::Solid, 2);
                             draw_line(
@@ -95,6 +107,39 @@ impl Canvas {
                                 second.get_x() as i32,
                                 second.get_y() as i32,
                             );
+                            &buffer.clear();
+                        }
+
+                        // circle
+                        if len > 1 && c_bm.eq(&true) {
+                            let first = &buffer[len - 1];
+                            let second = &buffer[len - 2];
+                            let circle = circle::Circle::new(*first, *second);
+
+                            set_draw_color(Color::Black);
+                            set_line_style(LineStyle::Solid, 3);
+                            draw_circle(
+                                circle.get_sidepoint().get_x() as f64,
+                                circle.get_sidepoint().get_y() as f64,
+                                circle.get_rad(),
+                            );
+                            &buffer.clear();
+                        }
+
+                        // rectangle
+                        if len > 1 && r_bm.eq(&true) {
+                            let first = &buffer[len - 1];
+                            let second = &buffer[len - 2];
+                            let rect = rectangle::Rectangle::new(*first, *second);
+                            set_draw_color(Color::Black);
+                            set_line_style(LineStyle::Solid, 2);
+                            draw_rect(
+                                rect.get_point_b().get_x() as i32,
+                                rect.get_point_b().get_y() as i32,
+                                rect.get_width() as i32,
+                                rect.get_height() as i32,
+                            );
+                            &buffer.clear();
                         }
 
                         ImageSurface::pop_current();
@@ -113,13 +158,16 @@ impl Canvas {
             c,
             l,
             points,
+            buffer,
         }
     }
 
     pub fn clear(&mut self) {
         let surf = self.surf.borrow_mut();
+        let mut buf = self.buffer.borrow_mut();
         let mut points = self.points.borrow_mut();
         points.clear();
+        buf.clear();
         ImageSurface::push_current(&surf);
         draw_rect_fill(0, 0, self.frame.w(), self.frame.h(), Color::White);
         ImageSurface::pop_current();
@@ -138,7 +186,6 @@ impl Canvas {
 
     // a function that should change l, r, c to a difrent bool value
     pub fn toggle(&mut self, buttons: (bool, bool, bool)) {
-        println!("Toggle!");
         let mut l = self.l.borrow_mut();
         let mut r = self.r.borrow_mut();
         let mut c = self.c.borrow_mut();
@@ -148,16 +195,19 @@ impl Canvas {
                 *l = true;
                 *r = false;
                 *c = false;
+                println!("l");
             }
             (false, true, false) => {
                 *l = false;
                 *r = true;
                 *c = false;
+                println!("r");
             }
             _ => {
                 *l = false;
                 *r = false;
                 *c = true;
+                println!("c");
             }
         }
     }

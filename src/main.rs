@@ -59,9 +59,9 @@ fn main() {
     );
     let mut rad1 = button::RadioRoundButton::new(0, 0, 0, 0, "L");
     rad1.toggle(true);
-    let mut rad2 = button::RadioRoundButton::new(0, 0, 0, 0, "C");
+    let mut rad2 = button::RadioRoundButton::new(0, 0, 0, 0, "R");
     rad2.toggle(false);
-    let mut rad3 = button::RadioRoundButton::new(0, 0, 0, 0, "R");
+    let mut rad3 = button::RadioRoundButton::new(0, 0, 0, 0, "C");
     rad3.toggle(false);
     flex.end();
 
@@ -72,11 +72,27 @@ fn main() {
     win.show();
 
     // if any RadioRoundButton is toggled they should use the toggled function
-    flex.set_callback({
+    rad1.set_callback({
         let mut clone = cvs.clone();
         move |_| {
             let mut cvs_clone = clone.borrow_mut();
-            cvs_clone.toggle((rad1.is_toggled(), rad2.is_toggled(), rad3.is_toggled()));
+            cvs_clone.toggle((true, false, false));
+        }
+    });
+
+    rad2.set_callback({
+        let mut clone = cvs.clone();
+        move |_| {
+            let mut cvs_clone = clone.borrow_mut();
+            cvs_clone.toggle((false, true, false));
+        }
+    });   
+
+    rad3.set_callback({
+        let mut clone = cvs.clone();
+        move |_| {
+            let mut cvs_clone = clone.borrow_mut();
+            cvs_clone.toggle((false, false, true));
         }
     });
 
