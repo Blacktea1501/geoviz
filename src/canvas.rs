@@ -128,8 +128,18 @@ impl Canvas {
 
                         // rectangle
                         if len > 1 && r_bm.eq(&true) {
+                            
+                            // check the y axis of the points to determine the first point
+                            if buffer[0].get_y() > buffer[1].get_y() {
+                                let temp = buffer[0];
+                                buffer[0] = buffer[1];
+                                buffer[1] = temp;
+                            }
+
                             let first = &buffer[len - 1];
                             let second = &buffer[len - 2];
+
+
                             let rect = rectangle::Rectangle::new(*first, *second);
                             set_draw_color(Color::Black);
                             set_line_style(LineStyle::Solid, 2);
