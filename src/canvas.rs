@@ -24,6 +24,7 @@ pub struct Canvas {
     c: Rc<RefCell<bool>>, // circle
     points: Rc<RefCell<Vec<Point>>>,
     buffer: Rc<RefCell<Vec<Point>>>,
+    color: Rc<RefCell<Color>>,
 }
 
 macro_rules! rcrc {
@@ -50,12 +51,14 @@ impl Canvas {
         let l = true;
         let points: Vec<Point> = Vec::new();
         let buffer: Vec<Point> = Vec::new();
+        let color = Color::Black;
 
         let c = rcrc!(c);
         let r = rcrc!(r);
         let l = rcrc!(l);
         let points = rcrc!(points);
         let buffer = rcrc!(buffer);
+        let color = rcrc!(color);
 
         // handlers
         frame.draw({
@@ -74,6 +77,7 @@ impl Canvas {
             let r_clone = r.clone();
             let points = points.clone();
             let buffer = buffer.clone();
+            let color = color.clone();
             move |f, ev| {
                 // println!("{}", ev);
                 // println!("coords {:?}", app::event_coords());
@@ -84,6 +88,7 @@ impl Canvas {
                 let r_bm = r_clone.borrow_mut();
                 let mut points = points.borrow_mut();
                 let mut buffer = buffer.borrow_mut();
+                let color = color.borrow_mut();
 
                 match ev {
                     Event::Push => {
@@ -99,7 +104,7 @@ impl Canvas {
                         if len > 1 && l_bm.eq(&true) {
                             let first = &buffer[len - 1];
                             let second = &buffer[len - 2];
-                            set_draw_color(Color::Black);
+                            set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 2);
                             draw_line(
                                 first.get_x() as i32,
@@ -116,7 +121,7 @@ impl Canvas {
                             let second = &buffer[len - 2];
                             let circle = circle::Circle::new(*first, *second);
 
-                            set_draw_color(Color::Black);
+                            set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 3);
                             draw_circle(
                                 circle.get_sidepoint().get_x() as f64,
@@ -130,6 +135,7 @@ impl Canvas {
                         if len > 1 && r_bm.eq(&true) {
                             
                             // check the y axis of the points to determine the first point
+                            // and asign it to first and second point propperly
                             if buffer[0].get_y() > buffer[1].get_y() {
                                 let temp = buffer[0];
                                 buffer[0] = buffer[1];
@@ -141,7 +147,7 @@ impl Canvas {
 
 
                             let rect = rectangle::Rectangle::new(*first, *second);
-                            set_draw_color(Color::Black);
+                            set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 2);
                             draw_rect(
                                 rect.get_point_b().get_x() as i32,
@@ -169,6 +175,7 @@ impl Canvas {
             l,
             points,
             buffer,
+            color,
         }
     }
 
@@ -205,20 +212,22 @@ impl Canvas {
                 *l = true;
                 *r = false;
                 *c = false;
-                println!("l");
             }
             (false, true, false) => {
                 *l = false;
                 *r = true;
                 *c = false;
-                println!("r");
             }
             _ => {
                 *l = false;
                 *r = false;
                 *c = true;
-                println!("c");
             }
         }
+    }
+
+    pub fn set_color(&mut self, color: (u8, u8, u8)){
+        let mut c = self.color.borrow_mut();
+        *c = Color::from_rgb(color.0, color.1, color.2);
     }
 }

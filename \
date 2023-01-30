@@ -111,7 +111,7 @@ fn main() {
         move |_| {
             let mut cvs_clone = clone.borrow_mut();
             let color = color_chooser("Color selector", ColorMode::Rgb);
-            cvs_clone.set_color(color.unwrap());
+            cvs_clone.set_color(color);
         }
     });
 
