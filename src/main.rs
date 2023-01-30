@@ -65,14 +65,25 @@ fn main() {
     let mut rad3 = button::RadioRoundButton::new(0, 0, 0, 0, "C");
     rad3.toggle(false);
     flex.end();
-
+    
+    // color selector button
     let mut colorbtn = button::Button::new(
-        PROGRAMMWIDTH - BUTTONWIDTH * 4,
+        PROGRAMMWIDTH - BUTTONWIDTH * 4 + 150,
         PROGRAMMHEIGHT - BUTTONHEIGHT,
         BUTTONWIDTH,
         BUTTONHEIGHT,
         "Colorselector",
     );
+
+    // check box for color fill
+    let mut fill = button::CheckButton::new(
+        PROGRAMMWIDTH - BUTTONWIDTH * 5 + 250,
+        PROGRAMMHEIGHT - BUTTONHEIGHT,
+        50,
+        BUTTONHEIGHT,
+        "Fill",
+    );
+
 
     // canvas
     let mut cvs: canvas::Canvas =
@@ -128,6 +139,15 @@ fn main() {
         move |_| {
             let clone = clone.borrow_mut();
             clone.clear();
+        }
+    });
+
+    fill.set_callback({
+        let mut clone = cvs.clone();
+        let mut fill = fill.clone();
+        move |_| {
+            let mut cvs_clone = clone.borrow_mut();
+            cvs_clone.set_fill(fill.value());
         }
     });
 
