@@ -12,8 +12,10 @@ use fltk::{
     prelude::{ImageExt, WidgetBase, WidgetExt},
 };
 
+use crate::figures::line::Line;
 use crate::figures::point::Point;
 use crate::figures::{circle, rectangle};
+use crate::utils::{get_point_of_intersection, get_line_circle_intersection, get_circles_intersection};
 
 #[derive(Clone)]
 pub struct Canvas {
@@ -26,6 +28,8 @@ pub struct Canvas {
     buffer: Rc<RefCell<Vec<Point>>>,
     color: Rc<RefCell<Color>>,
     fill: Rc<RefCell<bool>>,
+    lines: Rc<RefCell<Vec<Line>>>,
+    circles: Rc<RefCell<Vec<circle::Circle>>>,
 }
 
 macro_rules! rcrc {
@@ -57,6 +61,8 @@ impl Canvas {
         let buffer: Vec<Point> = Vec::new();
         let color = Color::Black;
         let fill = false;
+        let lines: Vec<Line> = Vec::new();
+        let circles: Vec<circle::Circle> = Vec::new();
 
         let c = rcrc!(c);
         let r = rcrc!(r);
@@ -65,6 +71,8 @@ impl Canvas {
         let buffer = rcrc!(buffer);
         let color = rcrc!(color);
         let fill = rcrc!(fill);
+        let lines = rcrc!(lines);
+        let circles = rcrc!(circles);
 
         // handlers
         frame.draw({
@@ -81,10 +89,13 @@ impl Canvas {
             let l_clone = l.clone();
             let c_clone = c.clone();
             let r_clone = r.clone();
-            let points = points.clone();
+            let points = points.clone(); // needed for later Tooltips
             let buffer = buffer.clone();
             let color = color.clone();
             let fill = fill.clone();
+            let lines = lines.clone();
+            let circles = circles.clone();
+
             move |f, ev| {
                 // println!("{}", ev);
                 // println!("coords {:?}", app::event_coords());
@@ -97,6 +108,8 @@ impl Canvas {
                 let mut buffer = buffer.borrow_mut();
                 let color = color.borrow_mut();
                 let fill = fill.borrow_mut();
+                let mut lines = lines.borrow_mut();
+                let mut circles = circles.borrow_mut();
 
                 match ev {
                     Event::Push => {
@@ -113,14 +126,41 @@ impl Canvas {
                         if len > 1 && l_bm.eq(&true) {
                             let first = &buffer[len - 1];
                             let second = &buffer[len - 2];
+                            let l = Line::new(*first, *second);
+                            lines.push(l);
+
                             set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 3);
-                            draw_line(
-                                first.get_x() as i32,
-                                first.get_y() as i32,
-                                second.get_x() as i32,
-                                second.get_y() as i32,
-                            );
+
+                            // draw an infinte line that should go through the first and second point
+
+                            // y = mx + b
+                            // x = (y - b) / m
+                            // println!("\nFirst x: {:?}", first.get_x());
+                            // println!("Second x: {:?}", second.get_x());
+                            // println!("Slope: {:?}", l.get_slope());
+                            if first.get_x() == second.get_x() {
+                                // if the line is vertical
+                                draw_line(first.get_x() as i32, 0, first.get_x() as i32, 2000);
+                                println!("Draw line with infinte slope");
+                            } else if first.get_y() == second.get_y() {
+                                // if the line is horizontal
+                                draw_line(0, first.get_y() as i32, 2000, first.get_y() as i32);
+                                println!("Draw line with infinte slope");
+                            } else {
+                                let fx = (first.get_y() - l.get_y_intercept())
+                                    / l.get_slope()
+                                    + 1000.0;
+                                let fy = l.get_slope() * fx + l.get_y_intercept();
+
+                                let sx = (second.get_y() - l.get_y_intercept())
+                                    / l.get_slope()
+                                    - 1000.0;
+                                let sy = l.get_slope() * sx + l.get_y_intercept();
+
+                                draw_line(fx as i32, fy as i32, sx as i32, sy as i32);
+                                println!("Draw line without infinte slope");
+                            }
                             &buffer.clear();
                         }
 
@@ -129,6 +169,7 @@ impl Canvas {
                             let first = &buffer[len - 1];
                             let second = &buffer[len - 2];
                             let circle = circle::Circle::new(*first, *second);
+                            circles.push(circle);
 
                             set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 3);
@@ -180,6 +221,53 @@ impl Canvas {
                             &buffer.clear();
                         }
 
+                        let l_len = lines.len();
+                        let c_len = circles.len();
+                        // calculate the intersection points
+                        if l_len > 1 {
+                            // get_point_of_intersection(l1, l2)
+                            let l1 = lines[l_len - 1];
+                            for l2 in lines.iter() {
+                                let l2 = *l2;
+
+                                let p = get_point_of_intersection(l1, l2);
+                                // draw the intersection point
+                                set_draw_color(Color::Red);
+                                draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
+                            }
+
+                        }
+                        // get_line_cirlce_intersection(l1, c1)
+                        if c_len > 0 && l_len > 0 {
+                            for c in circles.iter(){
+                                let c = *c;
+                                for l in lines.iter(){
+                                    let l = *l;
+                                    let p = get_line_circle_intersection(l, c); // seems buggy
+                                    for p in p.iter(){
+                                        set_draw_color(Color::Red);
+                                        draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
+                                    }
+                                }
+                            }
+                        }
+
+                        // get_circle_intersection(c1, c2)
+                        if c_len > 1 {
+                            for c1 in circles.iter(){
+                                let c1 = *c1;
+                                for c2 in circles.iter(){
+                                    let c2 = *c2;
+                                    let p = get_circles_intersection(c1, c2); // seems also buggy
+                                    for p in p.iter(){
+                                        set_draw_color(Color::Red);
+                                        draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
+                                    }
+                                }
+                            }
+
+                        }
+
                         ImageSurface::pop_current();
                         f.redraw();
                         true
@@ -199,6 +287,8 @@ impl Canvas {
             buffer,
             color,
             fill,
+            lines,
+            circles,
         }
     }
 
@@ -206,8 +296,12 @@ impl Canvas {
         let surf = self.surf.borrow_mut();
         let mut buf = self.buffer.borrow_mut();
         let mut points = self.points.borrow_mut();
+        let mut lines = self.lines.borrow_mut();
+        let mut circles = self.circles.borrow_mut();
         points.clear();
         buf.clear();
+        lines.clear();
+        circles.clear();
         ImageSurface::push_current(&surf);
         draw_rect_fill(0, 0, self.frame.w(), self.frame.h(), Color::White);
         ImageSurface::pop_current();
