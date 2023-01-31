@@ -34,10 +34,8 @@ macro_rules! rcrc {
     };
 }
 
-
 // need to do some bugfixes with placig the points so that
 // the circles and rectangles are drawn correctly
-
 
 impl Canvas {
     pub fn new(x: i32, y: i32, w: i32, h: i32, label: &str) -> Self {
@@ -104,7 +102,8 @@ impl Canvas {
                     Event::Push => {
                         ImageSurface::push_current(&surf);
                         let coords = app::event_coords();
-                        draw_circle_fill(coords.0, coords.1, 5, Color::Black);
+                        set_line_style(LineStyle::Solid, 3);
+                        draw_circle(coords.0 as f64, coords.1 as f64, 1.0);
 
                         &points.push(Point::new(coords.0 as f64, coords.1 as f64));
                         &buffer.push(Point::new(coords.0 as f64, coords.1 as f64));
@@ -134,11 +133,14 @@ impl Canvas {
                             set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 3);
                             if *fill {
-                                draw_circle_fill(
-                                    circle.get_center().get_x() as i32,
-                                    circle.get_center().get_y() as i32,
-                                    circle.get_diameter() as i32,
-                                    *color,
+                                // draw_circle_fill seems kinda buggy
+                                // need to change this to draw cicle and fill it using
+                                // LineStyle::Solid and radius as diameter
+                                set_line_style(LineStyle::Solid, circle.get_rad() as i32 * 2);
+                                draw_circle(
+                                    circle.get_sidepoint().get_x() as f64,
+                                    circle.get_sidepoint().get_y() as f64,
+                                    1.0,
                                 );
                             } else {
                                 draw_circle(
@@ -152,14 +154,6 @@ impl Canvas {
 
                         // rectangle
                         if len > 1 && r_bm.eq(&true) {
-                            // check the y axis of the points to determine the first point
-                            // and asign it to first and second point propperly
-                            if buffer[0].get_y() > buffer[1].get_y() {
-                                let temp = buffer[0];
-                                buffer[0] = buffer[1];
-                                buffer[1] = temp;
-                            }
-
                             let first = &buffer[len - 1];
                             let second = &buffer[len - 2];
 

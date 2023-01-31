@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 use std::f64;
 
-//use druid::Data;
-
 use crate::utils::get_distance;
 
 use super::point::Point;

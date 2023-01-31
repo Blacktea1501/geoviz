@@ -51,7 +51,7 @@ fn main() {
     );
 
     // RadioRoundButtons
-    let mut flex = group::Flex::new(
+    let flex = group::Flex::new(
         PROGRAMMWIDTH - BUTTONWIDTH * 3 + 150,
         PROGRAMMHEIGHT - BUTTONHEIGHT,
         50,
@@ -86,7 +86,7 @@ fn main() {
 
 
     // canvas
-    let mut cvs: canvas::Canvas =
+    let cvs: canvas::Canvas =
         canvas::Canvas::new(0, 0, PROGRAMMWIDTH, PROGRAMMHEIGHT - BUTTONHEIGHT, "");
 
     win.end();
@@ -96,7 +96,7 @@ fn main() {
     rad1.set_callback({
         let mut clone = cvs.clone();
         move |_| {
-            let mut cvs_clone = clone.borrow_mut();
+            let cvs_clone = clone.borrow_mut();
             cvs_clone.toggle((true, false, false));
         }
     });
@@ -104,7 +104,7 @@ fn main() {
     rad2.set_callback({
         let mut clone = cvs.clone();
         move |_| {
-            let mut cvs_clone = clone.borrow_mut();
+            let cvs_clone = clone.borrow_mut();
             cvs_clone.toggle((false, true, false));
         }
     });
@@ -112,7 +112,7 @@ fn main() {
     rad3.set_callback({
         let mut clone = cvs.clone();
         move |_| {
-            let mut cvs_clone = clone.borrow_mut();
+            let cvs_clone = clone.borrow_mut();
             cvs_clone.toggle((false, false, true));
         }
     });
@@ -120,7 +120,7 @@ fn main() {
     colorbtn.set_callback({
         let mut clone = cvs.clone();
         move |_| {
-            let mut cvs_clone = clone.borrow_mut();
+            let cvs_clone = clone.borrow_mut();
             let color = color_chooser("Color selector", ColorMode::Rgb);
             cvs_clone.set_color(color.unwrap());
         }
@@ -144,9 +144,9 @@ fn main() {
 
     fill.set_callback({
         let mut clone = cvs.clone();
-        let mut fill = fill.clone();
+        let fill = fill.clone();
         move |_| {
-            let mut cvs_clone = clone.borrow_mut();
+            let cvs_clone = clone.borrow_mut();
             cvs_clone.set_fill(fill.value());
         }
     });

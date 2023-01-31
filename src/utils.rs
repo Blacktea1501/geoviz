@@ -40,7 +40,7 @@ pub fn get_point_of_intersection(l1: Line, l2: Line) -> Point {
 }
 
 pub fn get_distance(p1: Point, p2: Point) -> f64 {
-    ((p1.get_x() - p2.get_x()).powf(2.0) + (p1.get_y() - p2.get_y()).powf(2.0)).sqrt()
+    ((p1.get_x() - p2.get_x()).powi(2) + (p1.get_y() - p2.get_y()).powi(2)).sqrt()
 }
 
 pub fn get_line_circle_intersection(l: Line, c: Circle) -> Vec<Point> {

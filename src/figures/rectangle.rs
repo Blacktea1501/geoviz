@@ -19,8 +19,8 @@ pub struct Rectangle {
 impl Rectangle {
     pub fn new(p1: Point, p2: Point) -> Rectangle {
         let diagonal = Line::new(p1, p2);
-        let height = (p1.get_y() - p2.get_y()).abs();
-        let width = (p1.get_x() - p2.get_x()).abs();
+        let height = p1.get_y() - p2.get_y();
+        let width = p1.get_x() - p2.get_x();
         let area = height * width;
         let perimeter = 2.0 * width + 2.0 * height;
         let position = get_point_of_intersection(
