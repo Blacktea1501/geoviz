@@ -16,6 +16,11 @@ impl Line {
         Line { a,  b,  slope}
     }
 
+    pub fn move_line(&mut self, p: Point) {
+        self.a.add_point(p);
+        self.b.add_point(p);
+    }
+
     pub fn get_point_a(&self) -> Point {
         self.a 
     }
@@ -29,7 +34,6 @@ impl Line {
     }
 
     pub fn get_y_intercept(&self) -> f64 {
-        // this is from utils
         get_y_intercept(self.a.get_x(), self.b.get_x(), self.a.get_y(), self.b.get_y())
     }
 

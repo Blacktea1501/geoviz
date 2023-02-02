@@ -15,7 +15,9 @@ use fltk::{
 use crate::figures::line::Line;
 use crate::figures::point::Point;
 use crate::figures::{circle, rectangle};
-use crate::utils::{get_point_of_intersection, get_line_circle_intersection, get_circles_intersection};
+use crate::utils::{
+    get_circles_intersection, get_line_circle_intersection, get_point_of_intersection,
+};
 
 #[derive(Clone)]
 pub struct Canvas {
@@ -142,24 +144,19 @@ impl Canvas {
                             if first.get_x() == second.get_x() {
                                 // if the line is vertical
                                 draw_line(first.get_x() as i32, 0, first.get_x() as i32, 2000);
-                                println!("Draw line with infinte slope");
                             } else if first.get_y() == second.get_y() {
                                 // if the line is horizontal
                                 draw_line(0, first.get_y() as i32, 2000, first.get_y() as i32);
-                                println!("Draw line with infinte slope");
                             } else {
-                                let fx = (first.get_y() - l.get_y_intercept())
-                                    / l.get_slope()
-                                    + 1000.0;
+                                let fx =
+                                    (first.get_y() - l.get_y_intercept()) / l.get_slope() + 1000.0;
                                 let fy = l.get_slope() * fx + l.get_y_intercept();
 
-                                let sx = (second.get_y() - l.get_y_intercept())
-                                    / l.get_slope()
-                                    - 1000.0;
+                                let sx =
+                                    (second.get_y() - l.get_y_intercept()) / l.get_slope() - 1000.0;
                                 let sy = l.get_slope() * sx + l.get_y_intercept();
 
                                 draw_line(fx as i32, fy as i32, sx as i32, sy as i32);
-                                println!("Draw line without infinte slope");
                             }
                             &buffer.clear();
                         }
@@ -170,6 +167,7 @@ impl Canvas {
                             let second = &buffer[len - 2];
                             let circle = circle::Circle::new(*first, *second);
                             circles.push(circle);
+
 
                             set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 3);
@@ -235,37 +233,37 @@ impl Canvas {
                                 set_draw_color(Color::Red);
                                 draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
                             }
-
                         }
                         // get_line_cirlce_intersection(l1, c1)
                         if c_len > 0 && l_len > 0 {
-                            for c in circles.iter(){
+                            for c in circles.iter() {
                                 let c = *c;
-                                for l in lines.iter(){
+                                for l in lines.iter() {
                                     let l = *l;
-                                    let p = get_line_circle_intersection(l, c); // seems buggy
-                                    for p in p.iter(){
-                                        set_draw_color(Color::Red);
+                                    let points = get_line_circle_intersection(l, c); // seems buggy
+                                    for p in points {
+                                        set_line_style(LineStyle::Solid, 3);
+                                        set_draw_color(Color::Green);
                                         draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
                                     }
                                 }
                             }
                         }
 
-                        // get_circle_intersection(c1, c2)
+                        // get_circles_intersection(c1, c2)
                         if c_len > 1 {
-                            for c1 in circles.iter(){
+                            for c1 in circles.iter() {
                                 let c1 = *c1;
-                                for c2 in circles.iter(){
+                                for c2 in circles.iter() {
                                     let c2 = *c2;
-                                    let p = get_circles_intersection(c1, c2); // seems also buggy
-                                    for p in p.iter(){
+                                    let p = get_circles_intersection(c1, c2);// seems also buggy
+                                    for p in p.iter() {
                                         set_draw_color(Color::Red);
+                                        set_line_style(LineStyle::Solid, 3);
                                         draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
                                     }
                                 }
                             }
-
                         }
 
                         ImageSurface::pop_current();

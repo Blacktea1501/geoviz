@@ -9,7 +9,7 @@ use fltk::{frame, group};
 use fltk_theme::{ThemeType, WidgetTheme};
 
 use crate::canvas::Canvas;
-use crate::figures::circle::Circle;
+use crate::figures::circle::{Circle, self};
 use crate::figures::line::Line;
 use crate::figures::point::Point;
 use crate::reader::*;
@@ -21,6 +21,10 @@ mod reader;
 mod utils;
 
 fn main() {
+    let mut p = Point::new(1.0, 2.0);
+    let p2 = Point::new(3.0, 4.0);
+    p.add_point(p2);
+    println!("{:?}", p);
     const PROGRAMMWIDTH: i32 = 1080;
     const PROGRAMMHEIGHT: i32 = 720;
     const BUTTONHEIGHT: i32 = 50;
