@@ -43,11 +43,10 @@ pub fn get_distance(p1: Point, p2: Point) -> f64 {
     ((p1.get_x() - p2.get_x()).powi(2) + (p1.get_y() - p2.get_y()).powi(2)).sqrt()
 }
 
-
 // mathworld.wolfram.com/Circle-LineIntersection.html
 pub fn get_line_circle_intersection(line: Line, c: Circle) -> Vec<Point> {
     let mut l = line.clone();
-    l.move_line(Point::new(-c.get_sidepoint().get_x(), -c.get_sidepoint().get_y()));
+    l.move_line(Point::new(-c.get_center().get_x(), -c.get_center().get_y()));
     let dx = l.get_point_b().get_x() - l.get_point_a().get_x();
     let dy = l.get_point_b().get_y() - l.get_point_a().get_y();
     let dr = (dx.powi(2) + dy.powi(2)).sqrt();
@@ -60,7 +59,7 @@ pub fn get_line_circle_intersection(line: Line, c: Circle) -> Vec<Point> {
         let x = big_d * dy / dr.powi(2);
         let y = -big_d * dx / dr.powi(2);
         let mut p = Point::new(x, y);
-        p.add_point(c.get_sidepoint());
+        p.add_point(c.get_center());
         return vec![p];
     } else {
         let x1 = (big_d * dy + sgn(dy) * dx * discriminant.sqrt()) / dr.powi(2);
@@ -69,7 +68,7 @@ pub fn get_line_circle_intersection(line: Line, c: Circle) -> Vec<Point> {
         let y2 = (-big_d * dx - dy.abs() * discriminant.sqrt()) / dr.powi(2);
         let mut points = vec![Point::new(x1, y1), Point::new(x2, y2)];
         for p in &mut points {
-            p.add_point(c.get_sidepoint()); 
+            p.add_point(c.get_center());
         }
         return points;
     }
@@ -85,66 +84,41 @@ fn sgn(x: f64) -> f64 {
     }
 }
 
-// TODO: fix this
+// this is from my original java project translatet to rust
 pub fn get_circles_intersection(c1: Circle, c2: Circle) -> Vec<Point> {
     let center_distance = get_distance(c1.get_center(), c2.get_center());
     let min_rad = c1.get_rad().min(c2.get_rad());
     let max_rad = c1.get_rad().max(c2.get_rad());
-    let slope = (c2.get_center().get_y() - c1.get_center().get_y()) / (c2.get_center().get_x() - c1.get_center().get_x());
-    let x = (center_distance.powi(2) + c1.get_rad().powi(2) - c2.get_rad().powi(2)) / (2.0 * center_distance);
-    let y = (c1.get_rad().powi(2) - x.powi(2)).sqrt();
-    let p1 = Point::new(c1.get_center().get_x() + x, c1.get_center().get_y() + y);
-    let p2 = Point::new(c1.get_center().get_x() + x, c1.get_center().get_y() - y);
-    let p3 = Point::new(c1.get_center().get_x() - x, c1.get_center().get_y() + y);
-    let p4 = Point::new(c1.get_center().get_x() - x, c1.get_center().get_y() - y);
-    let mut points = vec![p1, p2, p3, p4];
-    points.retain(|p| {
-        let dist = get_distance(*p, c1.get_center());
-        dist >= min_rad && dist <= max_rad
-    });
-    // println!("I got executed! (get_circles_intersection)");
-    points
+    let slope1 = (c2.get_center().get_x() - c1.get_center().get_x()) / center_distance;
+    let slope2 = (c2.get_center().get_y() - c1.get_center().get_y()) / center_distance;
+    let x_distance = (c1.get_rad().powf(2.0) + center_distance.powf(2.0) - c2.get_rad().powf(2.0))
+        / (2.0 * center_distance);
+    let y_distance = (c1.get_rad().powf(2.0) - x_distance.powf(2.0)).sqrt();
+    if double_comparison(center_distance, c1.get_rad() + c2.get_rad())
+        || double_comparison(center_distance + min_rad, max_rad)
+    {
+        let x = c1.get_center().get_x() + x_distance * slope1;
+        let y = c1.get_center().get_y() + x_distance * slope2;
+
+        return vec![Point::new(x, y)];
+    } else if center_distance > c1.get_rad() + c2.get_rad()
+        || center_distance + min_rad < max_rad
+        || (double_comparison(center_distance, 0.0) && c1.get_rad() != c2.get_rad())
+    {
+        return Vec::new();
+    } else if center_distance + min_rad > max_rad
+        || center_distance - c1.get_rad() - c2.get_rad() < 0.0
+    {
+        let x1 = c1.get_center().get_x() + x_distance * slope1 - y_distance * slope2;
+        let y1 = c1.get_center().get_y() + x_distance * slope2 + y_distance * slope1;
+        let x2 = c1.get_center().get_x() + x_distance * slope1 + y_distance * slope2;
+        let y2 = c1.get_center().get_y() + x_distance * slope2 - y_distance * slope1;
+        return vec![Point::new(x1, y1), Point::new(x2, y2)];
+    } else {
+        return Vec::new();
+    }
 }
 
-fn get_vector_points(len: f64, slope: f64, start: Point) -> Vec<Point> {
-    let vec_len = (1.0 + slope.powf(2.0)).sqrt();
-    let vec_times = len / vec_len;
-    vec![
-        Point::new(start.get_x() + vec_times, start.get_y() + vec_times * slope),
-        Point::new(start.get_x() - vec_times, start.get_y() - vec_times * slope),
-    ]
+pub fn double_comparison(a: f64, b: f64) -> bool {
+    (a - b).abs() < 0.0000000000000001
 }
-
-// pub fn get_circles_intersection(c1: Circle, c2: Circle) -> Vec<Point> {
-//     let center_distance = get_distance(c1.get_center(), c2.get_center());
-//     let min_rad = c1.get_rad().min(c2.get_rad());
-//     let max_rad = c1.get_rad().max(c2.get_rad());
-//     let slope1 = (c2.get_center().get_x() - c1.get_center().get_x()) / center_distance;
-//     let slope2 = (c2.get_center().get_y() - c1.get_center().get_y()) / center_distance;
-//     let x_distance = (c1.get_rad().powf(2.0) + center_distance.powf(2.0) - c2.get_rad().powf(2.0))
-//         / (2.0 * center_distance);
-//     let y_distance = (c1.get_rad().powf(2.0) - x_distance.powf(2.0)).sqrt();
-
-//     if center_distance == (c1.get_rad() + c2.get_rad()) || center_distance + min_rad == max_rad {
-//         let x = c1.get_center().get_x() + x_distance * slope1;
-//         let y = c1.get_center().get_y() + y_distance * slope2;
-//         return vec![Point::new(x, y)];
-//     }
-
-//     if center_distance > c1.get_rad() + c2.get_rad()
-//         || center_distance + min_rad < max_rad
-//         || (center_distance == 0.0 && c1.get_rad() != c2.get_rad())
-//     {
-//         return Vec::new();
-//     }
-
-//     if center_distance + min_rad > max_rad || center_distance - c1.get_rad() - c2.get_rad() < 0.0 {
-//         let x1 = c1.get_center().get_x() + x_distance * slope1 - y_distance * slope2;
-//         let y1 = c1.get_center().get_y() + x_distance * slope2 + y_distance * slope1;
-//         let x2 = c1.get_center().get_x() + x_distance * slope1 + y_distance * slope2;
-//         let y2 = c1.get_center().get_y() + x_distance * slope2 - y_distance * slope1;
-//         return vec![Point::new(x1, y1), Point::new(x2, y2)];
-//     } else {
-//         return Vec::new();
-//     }
-// }

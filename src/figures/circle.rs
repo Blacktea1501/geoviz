@@ -31,6 +31,11 @@ impl Circle {
         }
     }
 
+    pub fn move_circle(&mut self, x: f64, y: f64) {
+        self.center.add_point(Point::new(x, y));
+        self.sidepoint.add_point(Point::new(x, y));
+    }
+
     pub fn get_rad(&self) -> f64 {
         self.rad
     }
