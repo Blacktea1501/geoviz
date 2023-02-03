@@ -21,16 +21,6 @@ mod reader;
 mod utils;
 
 fn main() {
-//     let circle = Circle::new(Point::new(0.0, 0.0), Point::new(0.0, 1.0));
-//     let circle2 = Circle::new(Point::new(1.0, 0.0), Point::new(1.0, 1.0));
-//     let c3 = Circle::new(Point::new(2.0, 0.0), Point::new(2.0, 1.0));
-
-//     let r = get_circles_intersection(circle, circle2);
-//     let r2 = get_circles_intersection(circle, c3);
-
-//     println!("r: {:?}", r);
-//     println!("r2: {:?}", r2);
-
     const PROGRAMMWIDTH: i32 = 1080;
     const PROGRAMMHEIGHT: i32 = 720;
     const BUTTONHEIGHT: i32 = 50;
