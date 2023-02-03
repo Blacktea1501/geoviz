@@ -166,10 +166,6 @@ impl Canvas {
                             let sidepoint = &buffer[len - 1];
                             let center = &buffer[len - 2];
                             let circle = circle::Circle::new(*center, *sidepoint);
-<<<<<<< HEAD
-=======
-                            dbg!(&circle);
->>>>>>> abe4b0322589ced2805d4207519faa469c9681e3
                             circles.push(circle);
 
                             set_draw_color(*color);
