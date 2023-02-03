@@ -163,28 +163,24 @@ impl Canvas {
 
                         // circle
                         if len > 1 && c_bm.eq(&true) {
-                            let first = &buffer[len - 1];
-                            let second = &buffer[len - 2];
-                            let circle = circle::Circle::new(*first, *second);
+                            let sidepoint = &buffer[len - 1];
+                            let center = &buffer[len - 2];
+                            let circle = circle::Circle::new(*center, *sidepoint);
                             circles.push(circle);
-
 
                             set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 3);
                             if *fill {
-                                // draw_circle_fill seems kinda buggy
-                                // need to change this to draw cicle and fill it using
-                                // LineStyle::Solid and radius as diameter
                                 set_line_style(LineStyle::Solid, circle.get_rad() as i32 * 2);
                                 draw_circle(
-                                    circle.get_sidepoint().get_x() as f64,
-                                    circle.get_sidepoint().get_y() as f64,
+                                    circle.get_center().get_x() as f64,
+                                    circle.get_center().get_y() as f64,
                                     1.0,
                                 );
                             } else {
                                 draw_circle(
-                                    circle.get_sidepoint().get_x() as f64,
-                                    circle.get_sidepoint().get_y() as f64,
+                                    circle.get_center().get_x() as f64,
+                                    circle.get_center().get_y() as f64,
                                     circle.get_rad(),
                                 );
                             }
@@ -230,6 +226,7 @@ impl Canvas {
 
                                 let p = get_point_of_intersection(l1, l2);
                                 // draw the intersection point
+                                set_line_style(LineStyle::Solid, 3);
                                 set_draw_color(Color::Red);
                                 draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
                             }
@@ -256,9 +253,9 @@ impl Canvas {
                                 let c1 = *c1;
                                 for c2 in circles.iter() {
                                     let c2 = *c2;
-                                    let p = get_circles_intersection(c1, c2);// seems also buggy
+                                    let p = get_circles_intersection(c1, c2); // seems also buggy
                                     for p in p.iter() {
-                                        set_draw_color(Color::Red);
+                                        set_draw_color(Color::Blue);
                                         set_line_style(LineStyle::Solid, 3);
                                         draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
                                     }
