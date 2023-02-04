@@ -32,6 +32,8 @@ pub struct Canvas {
     fill: Rc<RefCell<bool>>,
     lines: Rc<RefCell<Vec<Line>>>,
     circles: Rc<RefCell<Vec<circle::Circle>>>,
+    lines_buffer: Rc<RefCell<Vec<Line>>>,
+    circles_buffer: Rc<RefCell<Vec<circle::Circle>>>,
 }
 
 macro_rules! rcrc {
@@ -65,6 +67,9 @@ impl Canvas {
         let fill = false;
         let lines: Vec<Line> = Vec::new();
         let circles: Vec<circle::Circle> = Vec::new();
+        let lines_buffer: Vec<Line> = Vec::new();
+        let circles_buffer: Vec<circle::Circle> = Vec::new();
+
 
         let c = rcrc!(c);
         let r = rcrc!(r);
@@ -75,6 +80,8 @@ impl Canvas {
         let fill = rcrc!(fill);
         let lines = rcrc!(lines);
         let circles = rcrc!(circles);
+        let lines_buffer = rcrc!(lines_buffer);
+        let circles_buffer = rcrc!(circles_buffer);
 
         // handlers
         frame.draw({
@@ -97,6 +104,9 @@ impl Canvas {
             let fill = fill.clone();
             let lines = lines.clone();
             let circles = circles.clone();
+            let lines_buffer = lines_buffer.clone();
+            let circles_buffer = circles_buffer.clone();
+
 
             move |f, ev| {
                 // println!("{}", ev);
@@ -112,6 +122,9 @@ impl Canvas {
                 let fill = fill.borrow_mut();
                 let mut lines = lines.borrow_mut();
                 let mut circles = circles.borrow_mut();
+                let mut lines_buffer = lines_buffer.borrow_mut();
+                let mut circles_buffer = circles_buffer.borrow_mut();
+
 
                 match ev {
                     Event::Push => {
@@ -129,7 +142,7 @@ impl Canvas {
                             let first = &buffer[len - 1];
                             let second = &buffer[len - 2];
                             let l = Line::new(*first, *second);
-                            lines.push(l);
+                            lines_buffer.push(l);
 
                             set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 3);
@@ -143,17 +156,17 @@ impl Canvas {
                             // println!("Slope: {:?}", l.get_slope());
                             if first.get_x() == second.get_x() {
                                 // if the line is vertical
-                                draw_line(first.get_x() as i32, 0, first.get_x() as i32, 2000);
+                                draw_line(first.get_x() as i32, 0, first.get_x() as i32, 20000);
                             } else if first.get_y() == second.get_y() {
                                 // if the line is horizontal
-                                draw_line(0, first.get_y() as i32, 2000, first.get_y() as i32);
+                                draw_line(0, first.get_y() as i32, 20000, first.get_y() as i32);
                             } else {
                                 let fx =
-                                    (first.get_y() - l.get_y_intercept()) / l.get_slope() + 1000.0;
+                                    (first.get_y() - l.get_y_intercept()) / l.get_slope() + 10000.0;
                                 let fy = l.get_slope() * fx + l.get_y_intercept();
 
                                 let sx =
-                                    (second.get_y() - l.get_y_intercept()) / l.get_slope() - 1000.0;
+                                    (second.get_y() - l.get_y_intercept()) / l.get_slope() - 10000.0;
                                 let sy = l.get_slope() * sx + l.get_y_intercept();
 
                                 draw_line(fx as i32, fy as i32, sx as i32, sy as i32);
@@ -166,7 +179,7 @@ impl Canvas {
                             let sidepoint = &buffer[len - 1];
                             let center = &buffer[len - 2];
                             let circle = circle::Circle::new(*center, *sidepoint);
-                            circles.push(circle);
+                            circles_buffer.push(circle);
 
                             set_draw_color(*color);
                             set_line_style(LineStyle::Solid, 3);
@@ -215,53 +228,92 @@ impl Canvas {
                             &buffer.clear();
                         }
 
+                        let lb_len = lines_buffer.len();
+                        let cb_len = circles_buffer.len();
                         let l_len = lines.len();
                         let c_len = circles.len();
-                        // calculate the intersection points
-                        if l_len > 1 {
-                            // get_point_of_intersection(l1, l2)
-                            let l1 = lines[l_len - 1];
-                            for l2 in lines.iter() {
-                                let l2 = *l2;
 
-                                let p = get_point_of_intersection(l1, l2);
-                                // draw the intersection point
-                                set_line_style(LineStyle::Solid, 3);
-                                set_draw_color(Color::Red);
-                                draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
-                            }
-                        }
-                        // get_line_cirlce_intersection(l1, c1)
-                        if c_len > 0 && l_len > 0 {
-                            for c in circles.iter() {
-                                let c = *c;
+                        if lb_len == 1 {
+                            if l_len == 0 {
+                                let l1 = lines_buffer.pop().unwrap();
+                                for c in circles.iter() {
+                                    let c1 = *c;
+                                    let points = get_line_circle_intersection(l1, c1);
+                                    // draw the intersection point
+                                    set_line_style(LineStyle::Solid, 3);
+                                    set_draw_color(Color::Red);
+                                    for p in points.iter() {
+                                        draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
+                                    }
+                                }
+                                lines.push(l1);
+                            } else {
+                                let l1 = lines_buffer.pop().unwrap();
                                 for l in lines.iter() {
-                                    let l = *l;
-                                    let points = get_line_circle_intersection(l, c); // seems buggy
-                                    for p in points {
-                                        set_line_style(LineStyle::Solid, 3);
-                                        set_draw_color(Color::Green);
+                                    let l2 = *l;
+                                    let p = get_point_of_intersection(l1, l2);
+                                    // draw the intersection point
+                                    set_line_style(LineStyle::Solid, 3);
+                                    set_draw_color(Color::Red);
+                                    draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
+                                }
+                                // calculate the intersection points between this line and circles
+                                for c in circles.iter() {
+                                    let c1 = *c;
+                                    let points = get_line_circle_intersection(l1, c1);
+                                    // draw the intersection point
+                                    set_line_style(LineStyle::Solid, 3);
+                                    set_draw_color(Color::Red);
+                                    for p in points.iter() {
                                         draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
                                     }
                                 }
+                                lines.push(l1);
+                            }
+                        }
+                        
+                        if cb_len == 1 {
+                            if c_len == 0 {
+                                let c1 = circles_buffer.pop().unwrap();
+                                for l in lines.iter() {
+                                    let l1 = *l;
+                                    let points = get_line_circle_intersection(l1, c1);
+                                    // draw the intersection point
+                                    set_line_style(LineStyle::Solid, 3);
+                                    set_draw_color(Color::Red);
+                                    for p in points.iter() {
+                                        draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
+                                    }
+                                }
+                                circles.push(c1);
+
+                            } else {
+                                let c1 = circles_buffer.pop().unwrap();
+                                for c in circles.iter() {
+                                    let c2 = *c;
+                                    let points = get_circles_intersection(c1, c2);
+                                    // draw the intersection point
+                                    set_line_style(LineStyle::Solid, 3);
+                                    set_draw_color(Color::Red);
+                                    for p in points.iter() {
+                                        draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
+                                    }
+                                }
+                                // calculate the intersection points between this line and circles
+                                for l in lines.iter() {
+                                    let l1 = *l;
+                                    let points = get_line_circle_intersection(l1, c1);
+                                    // draw the intersection point
+                                    set_line_style(LineStyle::Solid, 3);
+                                    set_draw_color(Color::Red);
+                                    for p in points.iter() {
+                                        draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
+                                    }
+                                }
+                                circles.push(c1);
                             }
                         }
 
-                        // get_circles_intersection(c1, c2)
-                        if c_len > 1 {
-                            for c1 in circles.iter() {
-                                let c1 = *c1;
-                                for c2 in circles.iter() {
-                                    let c2 = *c2;
-                                    let p = get_circles_intersection(c1, c2); // seems also buggy
-                                    for p in p.iter() {
-                                        set_draw_color(Color::Blue);
-                                        set_line_style(LineStyle::Solid, 3);
-                                        draw_circle(p.get_x() as f64, p.get_y() as f64, 1.0);
-                                    }
-                                }
-                            }
-                        }
 
                         ImageSurface::pop_current();
                         f.redraw();
@@ -284,6 +336,8 @@ impl Canvas {
             fill,
             lines,
             circles,
+            lines_buffer,
+            circles_buffer,
         }
     }
 
